@@ -1,0 +1,32 @@
+#include <stdio.h>
+#include <ctype.h>
+void caesarCipher(char *message, int key, int encrypt) {
+    for (int i = 0; message[i] != '\0'; i++) {
+        if (isalpha(message[i])) {
+            char offset = islower(message[i]) ? 'a' : 'A';
+            if (encrypt)
+                message[i] = (message[i] - offset + key) % 26 + offset;
+            else
+                message[i] = (message[i] - offset - key + 26) % 26 + offset;
+        }
+    }
+}
+
+int main() {
+    char message[100];
+    int key;
+
+    printf("Enter the message: ");
+    fgets(message, sizeof(message), stdin);
+
+    printf("Enter the key (1-25): ");
+    scanf("%d", &key);
+
+    caesarCipher(message, key, 1); 
+    printf("Encrypted message: %s", message);
+
+    caesarCipher(message, key, 0); 
+    printf("Decrypted message: %s", message);
+
+    return 0;
+}
