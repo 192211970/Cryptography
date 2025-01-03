@@ -1,0 +1,16 @@
+#include <stdio.h>
+#include <string.h>
+
+void mono_cipher(char *text, char *key) {
+for (int i = 0; text[i]; i++)
+text[i] = ('a' <= text[i] && text[i] <= 'z') ? key[text[i] - 'a'] : ('A' <= text[i] && text[i] <= 'Z') ? key[text[i] - 'A'] - 'a' + 'A' : text[i];
+}
+
+int main() {
+char text[100], key[27];
+printf("Text: "); fgets(text, sizeof(text), stdin); text[strcspn(text, "\n")] = 0;
+printf("Key: "); scanf("%s", key);
+mono_cipher(text, key);
+printf("Encrypted: %s\n", text);
+return 0;
+}
