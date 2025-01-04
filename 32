@@ -1,0 +1,47 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+unsigned int hash(const char *message) {
+    unsigned int hash = 0;
+    while (*message) {
+        hash = (hash << 5) + *message++;
+    }
+    return hash;
+}
+void dsa_sign(const char *message, unsigned int private_key, unsigned int *r, unsigned int *s) {
+    unsigned int k = rand() % 1000 + 1;  
+    unsigned int h = hash(message);
+
+    *r = (k * private_key) % 1009;  
+    *s = (h + (*r * private_key)) % 1009;  
+}
+unsigned int rsa_sign(const char *message, unsigned int private_key) {
+    unsigned int h = hash(message);
+    return (h * private_key) % 1009;  
+}
+
+int main() {
+    srand(time(0));  
+
+    const char *message = "This is a test message.";
+    unsigned int private_key = 12345;  
+    unsigned int r1, s1, r2, s2;
+    dsa_sign(message, private_key, &r1, &s1);
+    dsa_sign(message, private_key, &r2, &s2);
+
+    
+    unsigned int rsa_sig1 = rsa_sign(message, private_key);
+    unsigned int rsa_sig2 = rsa_sign(message, private_key);
+
+    printf("Message: %s\n", message);
+    printf("\nDSA Signatures:\n");
+    printf("Signature 1: r = %u, s = %u\n", r1, s1);
+    printf("Signature 2: r = %u, s = %u\n", r2, s2);
+
+    printf("\nRSA Signatures:\n");
+    printf("Signature 1: %u\n", rsa_sig1);
+    printf("Signature 2: %u\n", rsa_sig2);
+
+    return 0;
+}
