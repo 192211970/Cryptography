@@ -1,0 +1,115 @@
+#include <stdio.h>
+#include <string.h>
+#define BLOCK_SIZE 64
+#define HALF_BLOCK_SIZE (BLOCK_SIZE / 2)
+#define ROUNDS 16
+
+void permute(unsigned int block[], const int *perm_table, int size);
+void generate_subkeys(const unsigned int key[], unsigned int subkeys[ROUNDS][HALF_BLOCK_SIZE]);
+void feistel_round(const unsigned int left[], const unsigned int right[], const unsigned int subkey[], unsigned int new_left[], unsigned int new_right[]);
+void des_encrypt(const unsigned int plaintext[], const unsigned int key[], unsigned int ciphertext[]);
+void des_decrypt(const unsigned int ciphertext[], const unsigned int key[], unsigned int plaintext[]);
+
+const int IP[BLOCK_SIZE] = { /* Initial Permutation Table */ };
+const int IP_INV[BLOCK_SIZE] = { /* Inverse Permutation Table */ };
+
+int main() {
+    unsigned int plaintext[BLOCK_SIZE] = {0, 1, 0, 1, 1, 0, 0, 1, /* 64-bit example data */};
+    unsigned int key[BLOCK_SIZE] = {1, 0, 1, 0, 0, 1, 1, 0, /* 64-bit example key */};
+    unsigned int ciphertext[BLOCK_SIZE];
+    unsigned int decrypted_text[BLOCK_SIZE];
+
+    printf("Original Plaintext: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) printf("%d", plaintext[i]);
+    printf("\n");
+
+    des_encrypt(plaintext, key, ciphertext);
+    printf("Ciphertext: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) printf("%d", ciphertext[i]);
+    printf("\n");
+
+    des_decrypt(ciphertext, key, decrypted_text);
+    printf("Decrypted Text: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) printf("%d", decrypted_text[i]);
+    printf("\n");
+
+    return 0;
+}
+
+void permute(unsigned int block[], const int *perm_table, int size) {
+    unsigned int temp[size];
+    for (int i = 0; i < size; i++) {
+        temp[i] = block[perm_table[i] - 1];
+    }
+    memcpy(block, temp, sizeof(temp));
+}
+
+void generate_subkeys(const unsigned int key[], unsigned int subkeys[ROUNDS][HALF_BLOCK_SIZE]) {
+    
+    for (int i = 0; i < ROUNDS; i++) {
+        for (int j = 0; j < HALF_BLOCK_SIZE; j++) {
+            subkeys[i][j] = key[(j + i) % BLOCK_SIZE];
+        }
+    }
+}
+
+void feistel_round(const unsigned int left[], const unsigned int right[], const unsigned int subkey[], unsigned int new_left[], unsigned int new_right[]) {
+   
+    memcpy(new_left, right, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    for (int i = 0; i < HALF_BLOCK_SIZE; i++) {
+        new_right[i] = left[i] ^ (right[i] ^ subkey[i]);
+    }
+}
+
+void des_encrypt(const unsigned int plaintext[], const unsigned int key[], unsigned int ciphertext[]) {
+    unsigned int left[HALF_BLOCK_SIZE], right[HALF_BLOCK_SIZE];
+    unsigned int subkeys[ROUNDS][HALF_BLOCK_SIZE];
+
+    unsigned int temp[BLOCK_SIZE];
+    memcpy(temp, plaintext, BLOCK_SIZE * sizeof(unsigned int));
+    permute(temp, IP, BLOCK_SIZE);
+
+    memcpy(left, temp, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    memcpy(right, temp + HALF_BLOCK_SIZE, HALF_BLOCK_SIZE * sizeof(unsigned int));
+
+    generate_subkeys(key, subkeys);
+
+    for (int i = 0; i < ROUNDS; i++) {
+        unsigned int new_left[HALF_BLOCK_SIZE], new_right[HALF_BLOCK_SIZE];
+        feistel_round(left, right, subkeys[i], new_left, new_right);
+        memcpy(left, new_left, HALF_BLOCK_SIZE * sizeof(unsigned int));
+        memcpy(right, new_right, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    }
+    memcpy(temp, left, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    memcpy(temp + HALF_BLOCK_SIZE, right, HALF_BLOCK_SIZE * sizeof(unsigned int));
+
+    permute(temp, IP_INV, BLOCK_SIZE);
+    memcpy(ciphertext, temp, BLOCK_SIZE * sizeof(unsigned int));
+}
+
+void des_decrypt(const unsigned int ciphertext[], const unsigned int key[], unsigned int plaintext[]) {
+    unsigned int left[HALF_BLOCK_SIZE], right[HALF_BLOCK_SIZE];
+    unsigned int subkeys[ROUNDS][HALF_BLOCK_SIZE];
+
+    unsigned int temp[BLOCK_SIZE];
+    memcpy(temp, ciphertext, BLOCK_SIZE * sizeof(unsigned int));
+    permute(temp, IP, BLOCK_SIZE);
+
+    memcpy(left, temp, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    memcpy(right, temp + HALF_BLOCK_SIZE, HALF_BLOCK_SIZE * sizeof(unsigned int));
+
+    generate_subkeys(key, subkeys);
+
+    for (int i = ROUNDS - 1; i >= 0; i--) {
+        unsigned int new_left[HALF_BLOCK_SIZE], new_right[HALF_BLOCK_SIZE];
+        feistel_round(left, right, subkeys[i], new_left, new_right);
+        memcpy(left, new_left, HALF_BLOCK_SIZE * sizeof(unsigned int));
+        memcpy(right, new_right, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    }
+
+    memcpy(temp, left, HALF_BLOCK_SIZE * sizeof(unsigned int));
+    memcpy(temp + HALF_BLOCK_SIZE, right, HALF_BLOCK_SIZE * sizeof(unsigned int));
+
+    permute(temp, IP_INV, BLOCK_SIZE);
+    memcpy(plaintext, temp, BLOCK_SIZE * sizeof(unsigned int));
+}
