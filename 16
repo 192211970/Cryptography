@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define ALPHABET_SIZE 26
+#define MAX_TEXT_LEN 1000
+const double ENGLISH_FREQ[ALPHABET_SIZE] = {8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 
+                                            6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 
+                                            0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 
+                                            1.974, 0.074};
+
+typedef struct {
+    char text[MAX_TEXT_LEN];
+    double score;
+} Candidate;
+void computeFrequency(const char *text, double *freq) {
+    int count[ALPHABET_SIZE] = {0}, total = 0;
+    for (int i = 0; text[i]; i++) {
+        if (isalpha(text[i])) {
+            count[tolower(text[i]) - 'a']++;
+            total++;
+        }
+    }
+    for (int i = 0; i < ALPHABET_SIZE; i++) 
+        freq[i] = (total > 0) ? (100.0 * count[i] / total) : 0;
+}
+double calculateScore(const double *freq) {
+    double score = 0.0;
+    for (int i = 0; i < ALPHABET_SIZE; i++) 
+        score += (freq[i] - ENGLISH_FREQ[i]) * (freq[i] - ENGLISH_FREQ[i]);
+    return score;
+}
+void decrypt(const char *ciphertext, char *plaintext, const char *key) {
+    for (int i = 0; ciphertext[i]; i++) 
+        plaintext[i] = isalpha(ciphertext[i]) ? key[tolower(ciphertext[i]) - 'a'] + (isupper(ciphertext[i]) ? 'A' - 'a' : 0) : ciphertext[i];
+    plaintext[strlen(ciphertext)] = '\0';
+}
+
+int compare(const void *a, const void *b) {
+    return ((Candidate *)a)->score - ((Candidate *)b)->score;
+}
+
+int main() {
+    char ciphertext[MAX_TEXT_LEN], plaintext[MAX_TEXT_LEN];
+    int topN;
+    Candidate candidates[ALPHABET_SIZE * ALPHABET_SIZE];
+
+    printf("Enter ciphertext: ");
+    fgets(ciphertext, MAX_TEXT_LEN, stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0';
+
+    printf("Enter the number of top plaintexts to display: ");
+    scanf("%d", &topN);
+
+    char key[ALPHABET_SIZE];
+    for (int i = 0; i < ALPHABET_SIZE; i++) key[i] = i + 'a'; // Identity key
+
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        for (int j = 0; j < ALPHABET_SIZE; j++) {
+            char candidate_key[ALPHABET_SIZE];
+            memcpy(candidate_key, key, ALPHABET_SIZE);
+            char temp = candidate_key[i]; candidate_key[i] = candidate_key[j]; candidate_key[j] = temp;
+
+            decrypt(ciphertext, plaintext, candidate_key);
+            double freq[ALPHABET_SIZE];
+            computeFrequency(plaintext, freq);
+            double score = calculateScore(freq);
+
+            strcpy(candidates[i * ALPHABET_SIZE + j].text, plaintext);
+            candidates[i * ALPHABET_SIZE + j].score = score;
+        }
+    }
+
+    qsort(candidates, ALPHABET_SIZE * ALPHABET_SIZE, sizeof(Candidate), compare);
+
+    printf("\nTop %d possible plaintexts:\n", topN);
+    for (int i = 0; i < topN && i < ALPHABET_SIZE * ALPHABET_SIZE; i++) 
+        printf("Score: %.2f, Text: %s\n", candidates[i].score, candidates[i].text);
+
+    return 0;
+}
