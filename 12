@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <string.h>
+#define MOD 26
+void matrixMultiply(int key[2][2], int input[2], int output[2]) {
+    output[0] = (key[0][0] * input[0] + key[0][1] * input[1]) % MOD;
+    output[1] = (key[1][0] * input[0] + key[1][1] * input[1]) % MOD;
+}
+
+void findInverseMatrix(int key[2][2], int inverse[2][2]) {
+    int det = (key[0][0] * key[1][1] - key[0][1] * key[1][0]) % MOD;
+    if (det < 0) det += MOD;
+
+    int detInv = 0;
+    for (int i = 0; i < MOD; i++) {
+        if ((det * i) % MOD == 1) {
+            detInv = i;
+            break;
+        }
+    }
+
+    inverse[0][0] = (key[1][1] * detInv) % MOD;
+    inverse[0][1] = (-key[0][1] * detInv + MOD) % MOD;
+    inverse[1][0] = (-key[1][0] * detInv + MOD) % MOD;
+    inverse[1][1] = (key[0][0] * detInv) % MOD;
+}
+
+void hillCipher(char *text, int key[2][2], char *result, int decrypt) {
+    int len = strlen(text);
+    int input[2], output[2];
+    int inverse[2][2];
+
+    if (decrypt) findInverseMatrix(key, inverse);
+
+    for (int i = 0; i < len; i += 2) {
+        input[0] = text[i] - 'a';
+        input[1] = (i + 1 < len) ? text[i + 1] - 'a' : 'x' - 'a'; // Padding with 'x'
+
+        if (decrypt)
+            matrixMultiply(inverse, input, output);
+        else
+            matrixMultiply(key, input, output);
+
+        result[i] = (output[0] % MOD) + 'a';
+        result[i + 1] = (output[1] % MOD) + 'a';
+    }
+    result[len] = '\0';
+}
+
+int main() {
+    char plaintext[] = "meetmeattheusualplaceattenratherthaneoclock";
+    char ciphertext[100], decryptedText[100];
+    int key[2][2] = {{9, 4}, {5, 7}};
+
+    printf("Plaintext: %s\n", plaintext);
+
+    hillCipher(plaintext, key, ciphertext, 0);
+    printf("Ciphertext: %s\n", ciphertext);
+
+    hillCipher(ciphertext, key, decryptedText, 1);
+    printf("Decrypted Text: %s\n", decryptedText);
+
+    return 0;
+}
