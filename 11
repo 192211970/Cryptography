@@ -1,0 +1,27 @@
+#include <stdio.h>
+#include <math.h>
+unsigned long long factorial(int n) {
+    unsigned long long result = 1;
+    for (int i = 1; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+double approximate_power_of_2(unsigned long long n) {
+    return log2(n);
+}
+
+int main() {
+    int letters = 25;
+    unsigned long long total_keys = factorial(letters);
+    double power_of_2 = approximate_power_of_2(total_keys);
+
+    printf("Ignoring identical encryption results:\n");
+    printf("Total possible keys (25!): %llu\n", total_keys);
+    printf("Approximate power of 2: 2^%.0f\n", power_of_2);
+
+    printf("\nConsidering identical encryption results:\n");
+    printf("Approximate unique keys: 2^64\n");
+
+    return 0;
+}
