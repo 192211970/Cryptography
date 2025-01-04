@@ -1,0 +1,61 @@
+#include <stdio.h>
+int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+int gcdExtended(int a, int b, int *x, int *y) {
+    if (a == 0) {
+        *x = 0;
+        *y = 1;
+        return b;
+    }
+
+    int x1, y1;
+    int gcd = gcdExtended(b % a, a, &x1, &y1);
+
+    *x = y1 - (b / a) * x1;
+    *y = x1;
+
+    return gcd;
+}
+int modInverse(int e, int phi_n) {
+    int x, y;
+    int gcd = gcdExtended(e, phi_n, &x, &y);
+    if (gcd != 1) {
+        printf("Modular inverse doesn't exist!\n");
+        return -1;
+    }
+    return (x % phi_n + phi_n) % phi_n;
+}
+
+int main() {
+ 
+    int n = 3599; 
+    int e = 31;   
+    int M = 59;   
+
+    
+    int p = gcd(M, n);
+    if (p == 1 || p == n) {
+        printf("No common factor found, cannot break RSA.\n");
+        return 0;
+    }
+
+    
+    int q = n / p;
+
+    
+    int phi_n = (p - 1) * (q - 1);
+
+    
+    int d = modInverse(e, phi_n);
+    if (d != -1) {
+        printf("Private key d is: %d\n", d);
+    }
+
+    return 0;
+}
