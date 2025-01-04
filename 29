@@ -1,0 +1,33 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#define LANES 25
+uint64_t state[LANES];
+void xorMessageBlock(uint64_t *state, uint64_t messageBlock[LANES]) {
+    for (int i = 0; i < LANES; i++) {
+        state[i] ^= messageBlock[i];
+    }
+}
+bool checkCapacity(uint64_t *state) {
+    for (int i = 0; i < 8; i++) {
+        if (state[i] == 0) return false;
+    }
+    return true;
+}
+
+int main() {
+    for (int i = 0; i < LANES; i++) state[i] = 0;
+    uint64_t messageBlock[LANES] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                     0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000,
+                                     0x10000, 0x20000, 0x40000, 0x80000, 0x100000, 0x200000, 
+                                     0x400000, 0x800000, 0x1000000 };
+
+    int rounds = 0;
+    while (!checkCapacity(state)) {
+        rounds++;
+        xorMessageBlock(state, messageBlock);  
+    }
+
+    printf("All capacity lanes have non-zero bits after %d rounds.\n", rounds);
+    return 0;
+}
