@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#define BLOCK_SIZE 8 
+uint8_t left_shift(uint8_t val, int shift, int size) {
+    return ((val << shift) | (val >> (size - shift))) & ((1 << size) - 1);
+}
+
+uint8_t permute(uint8_t val, uint8_t perm[], int size) {
+    uint8_t result = 0;
+    for (int i = 0; i < size; i++) {
+        result |= ((val >> (perm[i] - 1)) & 1) << (size - i - 1);
+    }
+    return result;
+}
+void generate_keys(uint8_t key, uint8_t *k1, uint8_t *k2) {
+    uint8_t p10_perm[] = {3, 5, 2, 7, 4, 10, 1, 9, 8, 6};
+    uint8_t p8_perm[] = {6, 3, 7, 4, 8, 5, 10, 9};
+
+    uint8_t permuted = permute(key, p10_perm, 10);
+    uint8_t left = (permuted >> 5) & 0x1F;
+    uint8_t right = permuted & 0x1F;
+
+    left = left_shift(left, 1, 5);
+    right = left_shift(right, 1, 5);
+    uint8_t combined = (left << 5) | right;
+    *k1 = permute(combined, p8_perm, 8);
+
+    left = left_shift(left, 2, 5);
+    right = left_shift(right, 2, 5);
+    combined = (left << 5) | right;
+    *k2 = permute(combined, p8_perm, 8);
+}
+uint8_t sdes_encrypt(uint8_t block, uint8_t key) {
+    uint8_t ip_perm[] = {2, 6, 3, 1, 4, 8, 5, 7};
+    uint8_t ip_inv_perm[] = {4, 1, 3, 5, 7, 2, 8, 6};
+    uint8_t expanded_perm[] = {4, 1, 2, 3, 2, 3, 4, 1};
+    uint8_t s0[4][4] = {{1, 0, 3, 2}, {3, 2, 1, 0}, {0, 2, 1, 3}, {3, 1, 3, 2}};
+    uint8_t s1[4][4] = {{0, 1, 2, 3}, {2, 0, 1, 3}, {3, 0, 1, 0}, {2, 1, 0, 3}};
+
+    block = permute(block, ip_perm, 8);
+
+    uint8_t left = block >> 4;
+    uint8_t right = block & 0x0F;
+
+    for (int round = 0; round < 2; round++) {
+        uint8_t temp = right;
+        right = permute(right, expanded_perm, 8) ^ key;
+        uint8_t row = ((right & 0x80) >> 6) | ((right & 0x08) >> 3);
+        uint8_t col = ((right & 0x40) >> 5) | ((right & 0x04) >> 2);
+        uint8_t sbox_output = (s0[row][col] << 2) | s1[row][col];
+
+        right = left ^ sbox_output;
+        left = temp;
+    }
+
+    uint8_t pre_output = (right << 4) | left;
+    return permute(pre_output, ip_inv_perm, 8);
+}
+void ctr_mode(uint8_t *data, uint8_t *result, size_t length, uint8_t key, uint8_t counter) {
+    uint8_t k1, k2, keystream;
+    generate_keys(key, &k1, &k2);
+
+    for (size_t i = 0; i < length; i++) {
+        keystream = sdes_encrypt(counter++, k1);
+        result[i] = data[i] ^ keystream;
+    }
+}
+
+int main() {
+    uint8_t plaintext[] = {0x01, 0x02, 0x04}; 
+    uint8_t key = 0x7D;                      
+    uint8_t counter = 0x00;                  
+    uint8_t ciphertext[sizeof(plaintext)];
+    uint8_t decrypted[sizeof(plaintext)];
+    size_t length = sizeof(plaintext);
+
+    
+    printf("Plaintext: ");
+    for (size_t i = 0; i < length; i++) {
+        printf("%02X ", plaintext[i]);
+    }
+    printf("\n");
+
+    ctr_mode(plaintext, ciphertext, length, key, counter);
+    printf("Ciphertext: ");
+    for (size_t i = 0; i < length; i++) {
+        printf("%02X ", ciphertext[i]);
+    }
+    printf("\n");
+
+    
+    counter = 0x00; 
+    ctr_mode(ciphertext, decrypted, length, key, counter);
+    printf("Decrypted: ");
+    for (size_t i = 0; i < length; i++) {
+        printf("%02X ", decrypted[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
