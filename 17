@@ -1,0 +1,71 @@
+#include <stdio.h>
+#include <stdint.h>
+#define DES_KEY_SIZE 8    
+#define DES_BLOCK_SIZE 8  
+
+void leftShift(uint32_t* halfKey, int shiftAmount) {
+    *halfKey = ((*halfKey << shiftAmount) | (*halfKey >> (28 - shiftAmount))) & 0x0FFFFFFF;
+}
+
+void generateSubkeys(uint64_t key, uint64_t subkeys[16]) {
+    uint32_t C = (key >> 28) & 0x0FFFFFFF;
+    uint32_t D = key & 0x0FFFFFFF;
+    int shiftSchedule[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2};
+
+    for (int round = 0; round < 16; round++) {
+        leftShift(&C, shiftSchedule[round]);
+        leftShift(&D, shiftSchedule[round]);
+        subkeys[round] = ((uint64_t)C << 28) | D;
+    }
+}
+
+uint64_t roundFunction(uint64_t R, uint64_t subkey) {
+    return R ^ subkey;  // Simplified for demonstration
+}
+
+void initialPermutation(uint64_t* block) {
+    *block = ((*block >> 32) & 0xFFFFFFFF) | ((*block & 0xFFFFFFFF) << 32);
+}
+
+void desDecrypt(uint64_t ciphertext, uint64_t key, uint64_t* plaintext) {
+    uint64_t subkeys[16];
+    generateSubkeys(key, subkeys);
+
+    initialPermutation(&ciphertext);
+
+    uint32_t L = (ciphertext >> 32) & 0xFFFFFFFF;
+    uint32_t R = ciphertext & 0xFFFFFFFF;
+
+    for (int round = 15; round >= 0; round--) {
+        uint32_t newL = R;
+        uint32_t newR = L ^ roundFunction(R, subkeys[round]);
+        L = newL;
+        R = newR;
+    }
+
+    *plaintext = ((uint64_t)L << 32) | R;
+}
+
+void printBinary(uint64_t val) {
+    for (int i = 63; i >= 0; i--) {
+        printf("%d", (int)((val >> i) & 1));
+        if (i % 8 == 0) printf(" ");
+    }
+    printf("\n");
+}
+
+int main() {
+    uint64_t key = 0x133457799BBCDFF1;
+    uint64_t ciphertext = 0x85E813540F0AB405;
+
+    printf("Ciphertext: ");
+    printBinary(ciphertext);
+
+    uint64_t plaintext;
+    desDecrypt(ciphertext, key, &plaintext);
+
+    printf("\nDecrypted plaintext: ");
+    printBinary(plaintext);
+
+    return 0;
+}
