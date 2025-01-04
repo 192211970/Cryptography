@@ -1,0 +1,60 @@
+#include <stdio.h>
+int gcdExtended(int a, int b, int *x, int *y) {
+    if (a == 0) {
+        *x = 0;
+        *y = 1;
+        return b;
+    }
+
+    int x1, y1;
+    int gcd = gcdExtended(b % a, a, &x1, &y1);
+
+    *x = y1 - (b / a) * x1;
+    *y = x1;
+
+    return gcd;
+}
+int modInverse(int e, int phi_n) {
+    int x, y;
+    int gcd = gcdExtended(e, phi_n, &x, &y);
+    if (gcd != 1) {
+        printf("Modular inverse doesn't exist!\n");
+        return -1;
+    }
+    return (x % phi_n + phi_n) % phi_n;
+}
+int computePhiN(int e, int d) {
+    return (e * d - 1);
+}
+
+int main() {
+    int n = 3599; 
+    int e = 31;   
+    int d = 1121; 
+    int phi_n = computePhiN(e, d);
+    int p, q;
+    for (p = 2; p < n; ++p) {
+        if (n % p == 0) {
+            q = n / p;
+            if ((p - 1) * (q - 1) == phi_n) {
+                break;
+            }
+        }
+    }
+
+    if (p * q == n) {
+        printf("Insecure! Modulus n can be factorized:\n");
+        printf("p = %d, q = %d\n", p, q);
+    } else {
+        printf("Factorization failed. The system might still be secure.\n");
+    }
+    int new_e = 17; 
+    int new_d = modInverse(new_e, phi_n);
+    if (new_d != -1) {
+        printf("New public key: e = %d\n", new_e);
+        printf("New private key: d = %d\n", new_d);
+        printf("But the system is still insecure since phi(n) is known.\n");
+    }
+
+    return 0;
+}
