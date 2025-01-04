@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#define BLOCK_SIZE_128 16
+#define R_128 0x87  
+void left_shift(uint8_t *block, int block_size) {
+    uint8_t carry = 0;
+    for (int i = block_size - 1; i >= 0; --i) {
+        uint8_t next_carry = (block[i] & 0x80) ? 1 : 0;  
+        block[i] = (block[i] << 1) | carry;  
+        carry = next_carry;
+    }
+}
+void xor_with_constant(uint8_t *block, uint8_t constant, int block_size) {
+    block[block_size - 1] ^= constant;
+}
+void generate_subkeys(uint8_t *L, uint8_t *K1, uint8_t *K2, int block_size, uint8_t R) {
+    memcpy(K1, L, block_size);
+    left_shift(K1, block_size);
+    if (L[0] & 0x80) {
+        xor_with_constant(K1, R, block_size);
+    }
+    memcpy(K2, K1, block_size);
+    left_shift(K2, block_size);
+    if (K1[0] & 0x80) {
+        xor_with_constant(K2, R, block_size);
+    }
+}
+int main() {
+    uint8_t L[BLOCK_SIZE_128] = {0};  
+    uint8_t K1[BLOCK_SIZE_128], K2[BLOCK_SIZE_128];
+    L[0] = 0xAB;
+    L[1] = 0xCD;
+    generate_subkeys(L, K1, K2, BLOCK_SIZE_128, R_128);
+    printf("K1: ");
+    for (int i = 0; i < BLOCK_SIZE_128; i++) {
+        printf("%02X ", K1[i]);
+    }
+    printf("\n");
+
+    printf("K2: ");
+    for (int i = 0; i < BLOCK_SIZE_128; i++) {
+        printf("%02X ", K2[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
