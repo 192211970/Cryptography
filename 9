@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define SIZE 5
+void find_position(char matrix[SIZE][SIZE], char c, int *row, int *col) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (matrix[i][j] == c) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+void decrypt_playfair(char *ciphertext, char matrix[SIZE][SIZE]) {
+    char plaintext[100];
+    int k = 0;
+    for (int i = 0; ciphertext[i] != '\0' && ciphertext[i + 1] != '\0'; i += 2) {
+        int r1, c1, r2, c2;
+        find_position(matrix, toupper(ciphertext[i]), &r1, &c1);
+        find_position(matrix, toupper(ciphertext[i + 1]), &r2, &c2);
+        if (r1 == r2) { 
+            plaintext[k++] = matrix[r1][(c1 - 1 + SIZE) % SIZE];
+            plaintext[k++] = matrix[r2][(c2 - 1 + SIZE) % SIZE];
+        } else if (c1 == c2) {
+            plaintext[k++] = matrix[(r1 - 1 + SIZE) % SIZE][c1];
+            plaintext[k++] = matrix[(r2 - 1 + SIZE) % SIZE][c2];
+        } else { 
+            plaintext[k++] = matrix[r1][c2];
+            plaintext[k++] = matrix[r2][c1];
+        }
+    }
+    plaintext[k] = '\0'; 
+    printf("Decrypted Text: %s\n", plaintext);
+}
+int main() {
+    char matrix[SIZE][SIZE] = {
+        {'K', 'E', 'Y', 'W', 'O'},
+        {'R', 'D', 'A', 'B', 'C'},
+        {'F', 'G', 'H', 'I', 'L'},
+        {'M', 'N', 'P', 'Q', 'S'},
+        {'T', 'U', 'V', 'X', 'Z'}
+    };
+    char ciphertext[100];
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; 
+    decrypt_playfair(ciphertext, matrix);
+    return 0;
+}
