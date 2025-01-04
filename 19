@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <string.h>
+#define BLOCK_SIZE 8
+
+
+void desEncrypt(unsigned char *input, unsigned char *output, unsigned char *key) {
+  
+  
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        output[i] = input[i] ^ key[i];
+    }
+}
+
+void xorBlock(unsigned char *block1, unsigned char *block2, unsigned char *result) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        result[i] = block1[i] ^ block2[i];
+    }
+}
+
+void encrypt3DES_CBC(unsigned char *plaintext, unsigned char *ciphertext, unsigned char *key1, unsigned char *key2, unsigned char *key3, unsigned char *iv, size_t length) {
+    unsigned char prevCiphertext[BLOCK_SIZE];
+    memcpy(prevCiphertext, iv, BLOCK_SIZE);
+
+    for (size_t i = 0; i < length; i += BLOCK_SIZE) {
+        unsigned char xorResult[BLOCK_SIZE], block[BLOCK_SIZE];
+
+  
+        xorBlock(&plaintext[i], prevCiphertext, xorResult);
+
+  
+        desEncrypt(xorResult, block, key1);
+
+  
+        desEncrypt(block, block, key2);
+
+  
+        desEncrypt(block, block, key3);
+
+  
+        memcpy(&ciphertext[i], block, BLOCK_SIZE);
+
+  
+        memcpy(prevCiphertext, block, BLOCK_SIZE);
+    }
+}
+
+void printHex(unsigned char *data, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        printf("%02x ", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+  
+    unsigned char key1[BLOCK_SIZE] = {0x13, 0x34, 0x57, 0x79, 0xBB, 0xCC, 0xDD, 0xFF};
+    unsigned char key2[BLOCK_SIZE] = {0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
+    unsigned char key3[BLOCK_SIZE] = {0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x70, 0x81};
+    unsigned char plaintext[] = "This is a secret message!";
+    size_t plaintextLength = strlen((char*)plaintext);
+    unsigned char iv[BLOCK_SIZE] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char ciphertext[BLOCK_SIZE * ((plaintextLength / BLOCK_SIZE) + 1)];
+    encrypt3DES_CBC(plaintext, ciphertext, key1, key2, key3, iv, plaintextLength);
+    printf("Ciphertext (in Hex):\n");
+    printHex(ciphertext, plaintextLength);
+
+    return 0;
+}
