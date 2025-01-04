@@ -1,0 +1,73 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+#define BLOCK_SIZE 16
+
+void apply_padding(uint8_t *plaintext, size_t *length) {
+    size_t padding = BLOCK_SIZE - (*length % BLOCK_SIZE);
+    memset(plaintext + *length, 0, padding - 1);
+    plaintext[*length + padding - 1] = 0x80;
+    *length += padding;
+}
+
+void xor_blocks(const uint8_t *input1, const uint8_t *input2, uint8_t *output) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
+        output[i] = input1[i] ^ input2[i];
+    }
+}
+
+void ecb_encrypt(const uint8_t *plaintext, uint8_t *ciphertext, size_t length, const uint8_t *key) {
+    for (size_t i = 0; i < length; i += BLOCK_SIZE) {
+        xor_blocks(plaintext + i, key, ciphertext + i);
+    }
+}
+
+void cbc_encrypt(const uint8_t *plaintext, uint8_t *ciphertext, size_t length, const uint8_t *key, uint8_t *iv) {
+    uint8_t temp[BLOCK_SIZE];
+    for (size_t i = 0; i < length; i += BLOCK_SIZE) {
+        xor_blocks(plaintext + i, iv, temp);
+        xor_blocks(temp, key, ciphertext + i);
+        memcpy(iv, ciphertext + i, BLOCK_SIZE);
+    }
+}
+
+void cfb_encrypt(const uint8_t *plaintext, uint8_t *ciphertext, size_t length, const uint8_t *key, uint8_t *iv) {
+    uint8_t temp[BLOCK_SIZE];
+    for (size_t i = 0; i < length; i += BLOCK_SIZE) {
+        xor_blocks(iv, key, temp);
+        xor_blocks(plaintext + i, temp, ciphertext + i);
+        memcpy(iv, ciphertext + i, BLOCK_SIZE);
+    }
+}
+
+int main() {
+    uint8_t plaintext[256] = {0}, ciphertext[256], key[BLOCK_SIZE] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, iv[BLOCK_SIZE] = {0};
+    size_t length;
+
+    printf("Enter plaintext: ");
+    fgets((char *)plaintext, sizeof(plaintext), stdin);
+    length = strlen((char *)plaintext);
+    if (plaintext[length - 1] == '\n') plaintext[--length] = '\0';
+
+    apply_padding(plaintext, &length);
+
+    printf("ECB: ");
+    ecb_encrypt(plaintext, ciphertext, length, key);
+    for (size_t i = 0; i < length; i++) printf("%02X ", ciphertext[i]);
+    printf("\n");
+
+    memset(iv, 0, BLOCK_SIZE);
+    printf("CBC: ");
+    cbc_encrypt(plaintext, ciphertext, length, key, iv);
+    for (size_t i = 0; i < length; i++) printf("%02X ", ciphertext[i]);
+    printf("\n");
+
+    memset(iv, 0, BLOCK_SIZE);
+    printf("CFB: ");
+    cfb_encrypt(plaintext, ciphertext, length, key, iv);
+    for (size_t i = 0; i < length; i++) printf("%02X ", ciphertext[i]);
+    printf("\n");
+
+    return 0;
+}
