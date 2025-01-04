@@ -1,0 +1,41 @@
+#include <stdio.h>
+#include <string.h>
+#define BLOCK_SIZE 8
+
+void xorEncryptDecrypt(unsigned char *input, unsigned char *output, unsigned char *key) {
+    for (int i = 0; i < BLOCK_SIZE; i++) 
+        output[i] = input[i] ^ key[i];
+}
+
+void processECB(unsigned char *data, unsigned char *result, unsigned char *key, size_t length, int encrypt) {
+    for (size_t i = 0; i < length; i += BLOCK_SIZE) 
+        xorEncryptDecrypt(&data[i], &result[i], key);
+}
+
+void printHex(unsigned char *data, size_t length) {
+    for (size_t i = 0; i < length; i++) 
+        printf("%02x ", data[i]);
+    printf("\n");
+}
+
+int main() {
+    unsigned char key[BLOCK_SIZE] = {0x13, 0x34, 0x57, 0x79, 0xBB, 0xCC, 0xDD, 0xFF};
+    unsigned char plaintext[] = "This is a secret!";
+    size_t length = strlen((char*)plaintext);
+    unsigned char ciphertext[BLOCK_SIZE * ((length / BLOCK_SIZE) + 1)], decrypted[length];
+
+    
+    processECB(plaintext, ciphertext, key, length, 1);
+    printf("Ciphertext (in Hex):\n");
+    printHex(ciphertext, length);
+
+    
+    ciphertext[0] ^= 0x01;
+
+    
+    processECB(ciphertext, decrypted, key, length, 0);
+    printf("Decrypted plaintext (in Hex):\n");
+    printHex(decrypted, length);
+
+    return 0;
+}
