@@ -1,0 +1,24 @@
+#include <stdio.h>
+#include <string.h>
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+void affineEncrypt(char *plaintext, int a, int b, char *ciphertext) {
+    for (int i = 0; plaintext[i]; i++)
+        ciphertext[i] = ((a * (plaintext[i] - 'A') + b) % 26) + 'A';
+    ciphertext[strlen(plaintext)] = '\0';
+}
+
+int main() {
+    char plaintext[] = "HELLO", ciphertext[100];
+    int a = 5, b = 8;
+    if (gcd(a, 26) != 1) {
+        printf("Invalid value of a. It must be coprime with 26.\n");
+        return 1;
+    }
+    affineEncrypt(plaintext, a, b, ciphertext);
+    printf("Ciphertext: %s\n", ciphertext);
+    return 0;
+}
