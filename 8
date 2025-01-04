@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+void generate_cipher_alphabet(char* keyword, char* cipher_alphabet) {
+    char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    int used[26] = {0};
+    int k = 0;
+    for (int i = 0; keyword[i] != '\0'; i++) {
+        char ch = toupper(keyword[i]);
+        if (!used[ch - 'A']) {
+            cipher_alphabet[k++] = ch;
+            used[ch - 'A'] = 1;
+        }
+    }
+    for (int i = 0; i < 26; i++) {
+        if (!used[i]) {
+            cipher_alphabet[k++] = 'A' + i;
+        }
+    }
+}
+void encrypt(char* plaintext, char* cipher_alphabet, char* ciphertext) {
+    char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
+    for (int i = 0; plaintext[i] != '\0'; i++) {
+        if (isalpha(plaintext[i])) {
+            char ch = toupper(plaintext[i]);
+            for (int j = 0; j < 26; j++) {
+                if (ch == alphabet[j]) {
+                    ciphertext[i] = cipher_alphabet[j];
+                    break;
+                }
+            }
+        } else {
+            ciphertext[i] = plaintext[i]; 
+        }
+    }
+    ciphertext[strlen(plaintext)] = '\0'; 
+} 
+int main() {
+    char keyword[] = "CIPHER";
+    char plaintext[] = "HELLO WORLD";
+    char cipher_alphabet[26];
+    char ciphertext[256];
+    generate_cipher_alphabet(keyword, cipher_alphabet);
+    encrypt(plaintext, cipher_alphabet, ciphertext);
+    printf("Keyword: %s\n", keyword);
+    printf("Cipher Alphabet: %s\n", cipher_alphabet);
+    printf("Plaintext: %s\n", plaintext);
+    printf("Ciphertext: %s\n", ciphertext);   
+    return 0;
+}
