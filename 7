@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+void countFrequency(const char *ciphertext, int freq[256]) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isprint(ciphertext[i])) {
+            freq[(int)ciphertext[i]]++;
+        }
+    }
+}
+void printFrequency(int freq[256]) {
+    printf("Character Frequency:\n");
+    for (int i = 0; i < 256; i++) {
+        if (freq[i] > 0) {
+            printf("%c: %d\n", i, freq[i]);
+        }
+    }
+} 
+void decryptCiphertext(const char *ciphertext, const char *substitution, char *plaintext) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isprint(ciphertext[i])) {
+            char ch = ciphertext[i];
+            plaintext[i] = substitution[ch - ' ']; 
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0';
+}
+
+int main() {
+    char ciphertext[] = "531305))6:4826)41.)41);806*:48+860))85;;]8*;:*8+83"
+                        "(88)5*†;46(;88*96*2;8)(;485);5*42:(;4956*2(5*4)88*"
+                        ";4069285);)6+8)411;1(19:48081;8:8+1;4885;4)485+528806*81"
+                        "(19;48;(88;4(1234:48)42;161;188;12;";
+    int freq[256] = {0};
+    char substitution[256] = {0};
+    char plaintext[500];
+    countFrequency(ciphertext, freq);
+    printFrequency(freq);
+    for (int i = 0; i < 256; i++) {
+        substitution[i] = i; 
+    }
+    substitution['5' - ' '] = 'e';
+    substitution['3' - ' '] = 't';
+    substitution['1' - ' '] = 'h';
+    substitution['8' - ' '] = 'o';
+    substitution['4' - ' '] = 'a';
+    substitution['6' - ' '] = 'n';
+    substitution['2' - ' '] = 'd';
+    substitution['9' - ' '] = 'r';
+    substitution['0' - ' '] = 's';
+    substitution['+' - ' '] = 'u';
+    substitution[':' - ' '] = 'i';
+    substitution['*' - ' '] = 'l';
+    substitution[')' - ' '] = ' ';
+    decryptCiphertext(ciphertext, substitution, plaintext);
+    printf("\nDecrypted Message:\n%s\n", plaintext);
+    return 0;
+}
