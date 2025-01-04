@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MOD 26
+
+void process(const char *input, const int *key, char *output, int keyLength, int decrypt) {
+    int length = strlen(input);
+    for (int i = 0; i < length; i++) {
+        if (isalpha(input[i])) {
+            int shift = decrypt ? -key[i % keyLength] : key[i % keyLength];
+            int base = islower(input[i]) ? 'a' : 'A';
+            output[i] = ((input[i] - base + shift + MOD) % MOD) + base;
+        } else {
+            output[i] = input[i];
+        }
+    }
+    output[length] = '\0';
+}
+
+void findKey(const char *ciphertext, const char *target, int *key, int keyLength) {
+    for (int i = 0; i < strlen(ciphertext); i++) {
+        if (isalpha(ciphertext[i])) {
+            key[i % keyLength] = ((ciphertext[i] - target[i] + MOD) % MOD);
+        }
+    }
+}
+
+int main() {
+    const char *plaintext = "send more money";
+    int keyStream[] = {9, 0, 17, 23, 15, 21, 14, 11, 1, 12, 8, 9};
+    int keyLength = sizeof(keyStream) / sizeof(keyStream[0]);
+    char ciphertext[100], decrypted[100];
+    const char *target = "cash not needed";
+    int keyForTarget[100] = {0};
+
+    process(plaintext, keyStream, ciphertext, keyLength, 0); 
+    printf("Ciphertext: %s\n", ciphertext);
+
+    process(ciphertext, keyStream, decrypted, keyLength, 1); 
+    printf("Decrypted (original key): %s\n", decrypted);
+
+    findKey(ciphertext, target, keyForTarget, keyLength);
+    printf("Key for target: ");
+    for (int i = 0; i < keyLength; i++) printf("%d ", keyForTarget[i]);
+    printf("\n");
+
+    return 0;
+}
