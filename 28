@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <math.h>
+long long modular_exponentiation(long long base, long long exp, long long mod) {
+    long long result = 1;
+    base = base % mod;
+
+    while (exp > 0) {
+        if (exp % 2 == 1) { 
+            result = (result * base) % mod;
+        }
+        exp = exp >> 1; 
+        base = (base * base) % mod;
+    }
+
+    return result;
+}
+
+int main() {
+    
+    long long q = 3599;  
+    long long a = 2;     
+
+    
+    long long x_A = 25;  
+    long long A = modular_exponentiation(a, x_A, q); 
+
+    
+    long long x_B = 40;  
+    long long B = modular_exponentiation(a, x_B, q); 
+
+    
+    printf("Alice sends: A = %lld\n", A);
+    printf("Bob sends: B = %lld\n", B);
+
+   
+    long long K_Alice = modular_exponentiation(B, x_A, q);  
+    
+    long long K_Bob = modular_exponentiation(A, x_B, q);    
+
+    printf("Shared secret (Alice): %lld\n", K_Alice);
+    printf("Shared secret (Bob): %lld\n", K_Bob);
+
+    
+    if (K_Alice == K_Bob) {
+        printf("Key agreement successful! Both Alice and Bob share the key: %lld\n", K_Alice);
+    } else {
+        printf("Key agreement failed!\n");
+    }
+
+    return 0;
+}
