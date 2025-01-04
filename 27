@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <math.h>
+long long modular_exponentiation(long long base, long long exp, long long mod) {
+    long long result = 1;
+    base = base % mod;
+
+    while (exp > 0) {
+        if (exp % 2 == 1) { 
+            result = (result * base) % mod;
+        }
+        exp = exp >> 1; 
+        base = (base * base) % mod;
+    }
+
+    return result;
+}
+
+int main() {
+    long long n = 3599; 
+    long long e = 31;   
+    long long ciphertext[] = {2208, 1689, 3455, 2308, 1878}; 
+    int ciphertext_length = sizeof(ciphertext) / sizeof(ciphertext[0]);
+    printf("Precomputing mappings for 26 possible plaintext values...\n");
+    long long precomputed[26];
+    for (int i = 0; i < 26; i++) {
+        precomputed[i] = modular_exponentiation(i, e, n);
+        printf("Plaintext %d -> Ciphertext %lld\n", i, precomputed[i]);
+    }
+    printf("\nDecrypting the message:\n");
+    for (int i = 0; i < ciphertext_length; i++) {
+        for (int j = 0; j < 26; j++) {
+            if (ciphertext[i] == precomputed[j]) {
+                printf("Ciphertext %lld -> Plaintext %c\n", ciphertext[i], 'A' + j);
+                break;
+            }
+        }
+    }
+
+    return 0;
+}
